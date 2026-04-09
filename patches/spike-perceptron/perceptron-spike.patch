@@ -1,0 +1,366 @@
+diff --git a/riscv/insns/beq.h b/riscv/insns/beq.h
+index 3d2c9758..2d102c96 100644
+--- a/riscv/insns/beq.h
++++ b/riscv/insns/beq.h
+@@ -1,2 +1,4 @@
+-if (RS1 == RS2)
++const bool taken = RS1 == RS2;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/bge.h b/riscv/insns/bge.h
+index b2421c22..fcdaa38b 100644
+--- a/riscv/insns/bge.h
++++ b/riscv/insns/bge.h
+@@ -1,2 +1,4 @@
+-if (sreg_t(RS1) >= sreg_t(RS2))
++const bool taken = sreg_t(RS1) >= sreg_t(RS2);
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/bgeu.h b/riscv/insns/bgeu.h
+index f09b7f4d..fbfc3efa 100644
+--- a/riscv/insns/bgeu.h
++++ b/riscv/insns/bgeu.h
+@@ -1,2 +1,4 @@
+-if (RS1 >= RS2)
++const bool taken = RS1 >= RS2;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/blt.h b/riscv/insns/blt.h
+index cad064be..450707f1 100644
+--- a/riscv/insns/blt.h
++++ b/riscv/insns/blt.h
+@@ -1,2 +1,4 @@
+-if (sreg_t(RS1) < sreg_t(RS2))
++const bool taken = sreg_t(RS1) < sreg_t(RS2);
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/bltu.h b/riscv/insns/bltu.h
+index b7c3300b..7d77ab1f 100644
+--- a/riscv/insns/bltu.h
++++ b/riscv/insns/bltu.h
+@@ -1,2 +1,4 @@
+-if (RS1 < RS2)
++const bool taken = RS1 < RS2;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/bne.h b/riscv/insns/bne.h
+index e832fa14..7b7922be 100644
+--- a/riscv/insns/bne.h
++++ b/riscv/insns/bne.h
+@@ -1,2 +1,4 @@
+-if (RS1 != RS2)
++const bool taken = RS1 != RS2;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(BRANCH_TARGET);
+diff --git a/riscv/insns/c_beqz.h b/riscv/insns/c_beqz.h
+index 65bdcf6a..bd2f2f10 100644
+--- a/riscv/insns/c_beqz.h
++++ b/riscv/insns/c_beqz.h
+@@ -1,3 +1,5 @@
+ require_extension(EXT_ZCA);
+-if (RVC_RS1S == 0)
++const bool taken = RVC_RS1S == 0;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(pc + insn.rvc_b_imm());
+diff --git a/riscv/insns/c_bnez.h b/riscv/insns/c_bnez.h
+index 2a2e9a9a..96f28cb1 100644
+--- a/riscv/insns/c_bnez.h
++++ b/riscv/insns/c_bnez.h
+@@ -1,3 +1,5 @@
+ require_extension(EXT_ZCA);
+-if (RVC_RS1S != 0)
++const bool taken = RVC_RS1S != 0;
++p->note_conditional_branch(pc, taken);
++if (taken)
+   set_pc(pc + insn.rvc_b_imm());
+diff --git a/riscv/processor.cc b/riscv/processor.cc
+index 1bb1fc9e..39390903 100644
+--- a/riscv/processor.cc
++++ b/riscv/processor.cc
+@@ -33,10 +33,11 @@ processor_t::processor_t(const isa_parser_t *isa, const cfg_t *cfg,
+                          simif_t* sim, uint32_t id, bool halt_on_reset,
+                          FILE* log_file, std::ostream& sout_)
+   : debug(false), halt_request(HR_NONE), isa(isa), cfg(cfg), sim(sim), id(id), xlen(0),
+-  histogram_enabled(false), log_commits_enabled(false),
++  histogram_enabled(false), perceptron_stats_enabled(false), log_commits_enabled(false),
+   log_file(log_file), sout_(sout_.rdbuf()), halt_on_reset(halt_on_reset),
+   in_wfi(false), check_triggers_icount(false),
+   impl_table(256, false), extension_enable_table(isa->get_extension_table()),
++  perceptron_branch_count(0), perceptron_mispredictions(0),
+   last_pc(1), executions(1), TM(cfg->trigger_count)
+ {
+   VU.p = this;
+@@ -90,6 +91,15 @@ processor_t::~processor_t()
+       fprintf(stderr, "%0" PRIx64 " %" PRIu64 "\n", it.first, it.second);
+   }
+ 
++  if (perceptron_stats_enabled) {
++    const double miss_rate = perceptron_branch_count == 0 ? 0.0 :
++      (100.0 * perceptron_mispredictions) / perceptron_branch_count;
++    fprintf(stderr,
++            "Perceptron stats hart=%" PRIu32 ": branches=%" PRIu64
++            " mispredictions=%" PRIu64 " miss_rate=%.3f%%\n",
++            id, perceptron_branch_count, perceptron_mispredictions, miss_rate);
++  }
++
+   delete mmu;
+   delete disassembler;
+ }
+@@ -608,11 +618,28 @@ void processor_t::set_histogram(bool value)
+   histogram_enabled = value;
+ }
+ 
++void processor_t::set_perceptron_stats(bool value)
++{
++  perceptron_stats_enabled = value;
++}
++
+ void processor_t::enable_log_commits()
+ {
+   log_commits_enabled = true;
+ }
+ 
++void processor_t::note_conditional_branch(reg_t pc, bool actual_taken)
++{
++  if (!perceptron_stats_enabled)
++    return;
++
++  perceptron_branch_count++;
++  const bool predicted_taken = perceptron_predictor.predict(pc);
++  if (predicted_taken != actual_taken)
++    perceptron_mispredictions++;
++  perceptron_predictor.train(pc, actual_taken);
++}
++
+ void processor_t::reset()
+ {
+   xlen = isa->get_max_xlen();
+diff --git a/riscv/processor.h b/riscv/processor.h
+index a2e42865..92ceb0be 100644
+--- a/riscv/processor.h
++++ b/riscv/processor.h
+@@ -14,6 +14,7 @@
+ #include "entropy_source.h"
+ #include "csrs.h"
+ #include "isa_parser.h"
++#include "perceptron_predictor.h"
+ #include "triggers.h"
+ #include "../fesvr/memif.h"
+ #include "vector_unit.h"
+@@ -202,6 +203,7 @@ public:
+ 
+   void set_debug(bool value);
+   void set_histogram(bool value);
++  void set_perceptron_stats(bool value);
+   void enable_log_commits();
+   bool get_log_commits_enabled() const { return log_commits_enabled; }
+   void reset();
+@@ -280,6 +282,7 @@ public:
+ 
+   void register_insn(insn_desc_t);
+   void register_extension(extension_t*);
++  void note_conditional_branch(reg_t pc, bool actual_taken);
+ 
+   // MMIO slave interface
+   bool load(reg_t addr, size_t len, uint8_t* bytes);
+@@ -319,6 +322,7 @@ private:
+   uint32_t id;
+   unsigned xlen;
+   bool histogram_enabled;
++  bool perceptron_stats_enabled;
+   bool log_commits_enabled;
+   FILE *log_file;
+   std::ostream sout_; // needed for socket command interface -s, also used for -d and -l, but not for --log
+@@ -334,6 +338,9 @@ private:
+ 
+   std::vector<insn_desc_t> instructions;
+   std::unordered_map<reg_t,uint64_t> pc_histogram;
++  perceptron_predictor_t perceptron_predictor;
++  uint64_t perceptron_branch_count;
++  uint64_t perceptron_mispredictions;
+ 
+   static const size_t OPCODE_CACHE_SIZE = 8191;
+   insn_desc_t opcode_cache[OPCODE_CACHE_SIZE];
+diff --git a/riscv/riscv.mk.in b/riscv/riscv.mk.in
+index 04747c99..0a2ef226 100644
+--- a/riscv/riscv.mk.in
++++ b/riscv/riscv.mk.in
+@@ -49,6 +49,7 @@ riscv_precompiled_hdrs = \
+ 	insn_template.h \
+ 
+ riscv_srcs = \
++	perceptron_predictor.cc \
+ 	processor.cc \
+ 	execute.cc \
+ 	dts.cc \
+diff --git a/riscv/sim.cc b/riscv/sim.cc
+index 57e96308..97e4f9d2 100644
+--- a/riscv/sim.cc
++++ b/riscv/sim.cc
+@@ -294,6 +294,13 @@ void sim_t::set_histogram(bool value)
+   }
+ }
+ 
++void sim_t::set_perceptron_stats(bool value)
++{
++  for (size_t i = 0; i < procs.size(); i++) {
++    procs[i]->set_perceptron_stats(value);
++  }
++}
++
+ void sim_t::configure_log(bool enable_log, bool enable_commitlog)
+ {
+   log = enable_log;
+diff --git a/riscv/sim.h b/riscv/sim.h
+index efe5f83c..b8dbe8dc 100644
+--- a/riscv/sim.h
++++ b/riscv/sim.h
+@@ -39,6 +39,7 @@ public:
+   int run();
+   void set_debug(bool value);
+   void set_histogram(bool value);
++  void set_perceptron_stats(bool value);
+   void add_device(reg_t addr, std::shared_ptr<abstract_device_t> dev);
+ 
+   // Configure logging
+diff --git a/spike_main/spike.cc b/spike_main/spike.cc
+index b5a1ce4d..ccbf4cba 100644
+--- a/spike_main/spike.cc
++++ b/spike_main/spike.cc
+@@ -56,6 +56,7 @@ static void help(int exit_code = 1)
+   fprintf(stderr, "  --device=<name>       Attach MMIO plugin device from an --extlib library\n");
+   fprintf(stderr, "  --log-cache-miss      Generate a log of cache miss\n");
+   fprintf(stderr, "  --log-commits         Generate a log of commits info\n");
++  fprintf(stderr, "  --perceptron-stats    Print online perceptron branch prediction stats\n");
+   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
+   fprintf(stderr, "                          This flag can be used multiple times.\n");
+   fprintf(stderr, "  --extlib=<name>       Shared library to load\n");
+@@ -340,6 +341,7 @@ int main(int argc, char** argv)
+   std::unique_ptr<cache_sim_t> l2;
+   bool log_cache = false;
+   bool log_commits = false;
++  bool perceptron_stats = false;
+   const char *log_path = nullptr;
+   std::vector<std::function<extension_t*()>> extensions;
+   const char* initrd = NULL;
+@@ -444,6 +446,8 @@ int main(int argc, char** argv)
+       [&](const char UNUSED *s){dm_config.support_haltgroups = false;});
+   parser.option(0, "log-commits", 0,
+                 [&](const char UNUSED *s){log_commits = true;});
++  parser.option(0, "perceptron-stats", 0,
++                [&](const char UNUSED *s){perceptron_stats = true;});
+   parser.option(0, "log", 1,
+                 [&](const char* s){log_path = s;});
+   FILE *cmd_file = NULL;
+@@ -554,6 +558,7 @@ int main(int argc, char** argv)
+   s.set_debug(debug);
+   s.configure_log(log, log_commits);
+   s.set_histogram(histogram);
++  s.set_perceptron_stats(perceptron_stats);
+ 
+   auto return_code = s.run();
+ 
+
+diff --git a/riscv/perceptron_predictor.h b/riscv/perceptron_predictor.h
+new file mode 100644
+index 00000000..d3be08cf
+--- /dev/null
++++ b/riscv/perceptron_predictor.h
+@@ -0,0 +1,30 @@
++// See LICENSE for license details.
++#ifndef _RISCV_PERCEPTRON_PREDICTOR_H
++#define _RISCV_PERCEPTRON_PREDICTOR_H
++
++#include <cstddef>
++#include <cstdint>
++#include <vector>
++
++class perceptron_predictor_t
++{
++public:
++  perceptron_predictor_t(size_t n_entries = 256, size_t hist_len = 32, unsigned w_bits = 8);
++
++  bool predict(uint64_t pc) const;
++  void train(uint64_t pc, bool actual_taken);
++
++private:
++  int index(uint64_t pc) const;
++  int sat_inc(int x) const;
++  int sat_dec(int x) const;
++
++  size_t hist_len;
++  int max_weight;
++  int min_weight;
++  std::vector<int> bias;
++  std::vector<std::vector<int>> weights;
++  std::vector<bool> history;
++};
++
++#endif
+
+diff --git a/riscv/perceptron_predictor.cc b/riscv/perceptron_predictor.cc
+new file mode 100644
+index 00000000..6a825db3
+--- /dev/null
++++ b/riscv/perceptron_predictor.cc
+@@ -0,0 +1,53 @@
++// See LICENSE for license details.
++
++#include "perceptron_predictor.h"
++
++perceptron_predictor_t::perceptron_predictor_t(size_t n_entries, size_t hist_len, unsigned w_bits)
++  : hist_len(hist_len),
++    max_weight((1 << (w_bits - 1)) - 1),
++    min_weight(-(1 << (w_bits - 1))),
++    bias(n_entries, 0),
++    weights(n_entries, std::vector<int>(hist_len, 0)),
++    history(hist_len, false)
++{
++}
++
++int perceptron_predictor_t::index(uint64_t pc) const
++{
++  return (pc >> 2) & (bias.size() - 1);
++}
++
++int perceptron_predictor_t::sat_inc(int x) const
++{
++  return x == max_weight ? x : x + 1;
++}
++
++int perceptron_predictor_t::sat_dec(int x) const
++{
++  return x == min_weight ? x : x - 1;
++}
++
++bool perceptron_predictor_t::predict(uint64_t pc) const
++{
++  const int idx = index(pc);
++  int score = bias[idx];
++
++  for (size_t i = 0; i < hist_len; ++i)
++    score += history[i] ? weights[idx][i] : -weights[idx][i];
++
++  return score >= 0;
++}
++
++void perceptron_predictor_t::train(uint64_t pc, bool actual_taken)
++{
++  const int idx = index(pc);
++  bias[idx] = actual_taken ? sat_inc(bias[idx]) : sat_dec(bias[idx]);
++
++  for (size_t i = 0; i < hist_len; ++i) {
++    weights[idx][i] =
++      history[i] == actual_taken ? sat_inc(weights[idx][i]) : sat_dec(weights[idx][i]);
++  }
++
++  history.insert(history.begin(), actual_taken);
++  history.pop_back();
++}
