@@ -1,10 +1,10 @@
 #include "mmio.h"
 
-#define SRAM_BIST_DATA0 /* TODO */
-#define SRAM_BIST_DATA1 /* TODO */
-#define SRAM_BIST_DONE /* TODO */
-#define SRAM_BIST_FAIL /* TODO */
-#define SRAM_BIST_EX /* TODO */
+#define SRAM_BIST_DATA0 0x4000
+#define SRAM_BIST_DATA1 0x4004
+#define SRAM_BIST_DONE 0x4008
+#define SRAM_BIST_FAIL 0x400C
+#define SRAM_BIST_EX 0x4010
 
 int main(void)
 {

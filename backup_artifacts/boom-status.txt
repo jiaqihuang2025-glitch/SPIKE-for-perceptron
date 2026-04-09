@@ -1,0 +1,10 @@
+ M src/main/scala/common/config-mixins.scala
+ M src/main/scala/exu/core.scala
+?? src/Parameters}
+?? src/boom.common._
+?? src/boom.util.{BoomCoreStringPrefix}
+?? src/chisel3._
+?? src/chisel3.util._
+?? src/freechips.rocketchip.diplomacy._
+?? src/freechips.rocketchip.tilelink._
+?? src/main/scala/ifu/bpd/perceptron.scala

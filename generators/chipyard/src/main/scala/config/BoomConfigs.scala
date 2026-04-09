@@ -60,3 +60,8 @@ class dmiMediumBoomCosimConfig extends Config(
   new chipyard.config.WithDMIDTM ++                              // have debug module expose a clocked DMI port
   new boom.common.WithNMediumBooms(1) ++
   new chipyard.config.AbstractConfig)
+
+class PerceptronMediumBoomConfig extends Config(
+  new boom.common.WithPerceptronBPD ++
+  new boom.common.WithNMediumBoomsNoBPD(1) ++
+  new chipyard.config.AbstractConfig)

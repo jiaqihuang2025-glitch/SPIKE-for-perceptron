@@ -29,7 +29,7 @@ include libgloss.mk
 
 PROGRAMS = pwm blkdev accum charcount nic-loopback big-blkdev pingd \
            streaming-passthrough streaming-fir nvdla spiflashread spiflashwrite fft gcd \
-           hello mt-hello srambist
+           hello mt-hello srambist perfcounter
 
 
 .DEFAULT_GOAL := default
@@ -50,6 +50,9 @@ spiflash.img: spiflash.py
 
 %.riscv: %.o $(libgloss)
 	$(GCC) $(LDFLAGS) $< -o $@
+
+perfcounter.riscv: perfcounter.o XOR_parity.o $(libgloss)
+	$(GCC) $(LDFLAGS) $^ -o $@
 
 %.dump: %.riscv
 	$(OBJDUMP) -D $< > $@

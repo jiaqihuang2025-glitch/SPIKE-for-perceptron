@@ -1,0 +1,1 @@
+../../../../../../vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v

@@ -7,6 +7,17 @@ import freechips.rocketchip.diplomacy.{AsynchronousCrossing}
 // Rocket Configs
 // --------------
 
+class SramBistConfig extends Config(
+  new srambist.WithSramBist(srambist.SramBistParams(address = 0x4000)) ++ // TODO: Instantiate your SRAM BIST.
+  new freechips.rocketchip.subsystem.WithNSmallCores(1) ++
+  new testchipip.soc.WithNoScratchpads ++ // Remove subsystem scratchpads
+  new testchipip.serdes.WithSerialTLMem(size = (1 << 30) * 1L) ++ // Configure the off-chip memory accessible over serial-tl as backing memory
+  new freechips.rocketchip.subsystem.WithNoMemPort ++ // Remove off-chip AXI port
+  new testchipip.soc.WithOffchipBusClient(freechips.rocketchip.subsystem.MBUS) ++ // off-chip bus connects to MBUS to provide backing memory
+  new testchipip.soc.WithOffchipBus ++ // Attach off-chip bus
+  new chipyard.config.WithBroadcastManager ++ // Replace L2 with a broadcast hub for coherence
+  new chipyard.config.AbstractConfig)
+
 class RocketConfig extends Config(
   new freechips.rocketchip.subsystem.WithNBigCores(1) ++         // single rocket-core
   new chipyard.config.AbstractConfig)

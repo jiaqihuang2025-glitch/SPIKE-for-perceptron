@@ -21,26 +21,26 @@ vlsi.core.sram_generator_tool: "hammer.technology.sky130.sram_compiler"
 
 vlsi.technology.extra_libraries:
   - library:
-      nldm_liberty_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
-      verilog_sim: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
-      lef_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
-      gds_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
+      nldm_liberty_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
+      verilog_sim: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
+      lef_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
+      gds_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
       corner: {nmos: typical, pmos: typical, temperature: "025 C"}
       supplies: {VDD: "1.80 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]
   - library:
-      nldm_liberty_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
-      verilog_sim: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
-      lef_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
-      gds_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
+      nldm_liberty_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
+      verilog_sim: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
+      lef_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
+      gds_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
       corner: {nmos: slow, pmos: slow, temperature: "100 C"}
       supplies: {VDD: "1.60 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ] 
   - library:
-      nldm_liberty_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
-      verilog_sim: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
-      lef_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
-      gds_file: "/scratch/eecs251b/chipyard/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
+      nldm_liberty_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro_tt_025C_1v80.rc.lib"
+      verilog_sim: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.v"
+      lef_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.lef"
+      gds_file: "/scratch/eecs251b-aba/chipyard-jiaqihuang2025-glitch/vlsi/macros/sram22_64x32m4w32_macro/sram22_64x32m4w32_macro.gds"
       corner: {nmos: fast, pmos: fast, temperature: "-40 C"}
       supplies: {VDD: "1.95 V", GND: "0 V"}
       provides: [ {lib_type: stdcell, vt: RVT} ]

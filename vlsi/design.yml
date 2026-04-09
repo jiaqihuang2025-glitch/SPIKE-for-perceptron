@@ -51,8 +51,8 @@ vlsi.inputs.placement_constraints:
     # srambist
   - path: ChipTop/system/srambist/sram
     type: hardmacro
-    x: 470
-    y: 2100
+    x: 393
+    y: 1643
     orientation: my90
 
 # Power straps
