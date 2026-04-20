@@ -92,12 +92,17 @@ processor_t::~processor_t()
   }
 
   if (perceptron_stats_enabled) {
+    const uint64_t instructions = state.minstret->read();
     const double miss_rate = perceptron_branch_count == 0 ? 0.0 :
       (100.0 * perceptron_mispredictions) / perceptron_branch_count;
+    const double mpki = instructions == 0 ? 0.0 :
+      (1000.0 * perceptron_mispredictions) / instructions;
     fprintf(stderr,
             "Perceptron stats hart=%" PRIu32 ": branches=%" PRIu64
-            " mispredictions=%" PRIu64 " miss_rate=%.3f%%\n",
-            id, perceptron_branch_count, perceptron_mispredictions, miss_rate);
+            " mispredictions=%" PRIu64 " miss_rate=%.3f%%"
+            " instructions=%" PRIu64 " mpki=%.3f\n",
+            id, perceptron_branch_count, perceptron_mispredictions, miss_rate,
+            instructions, mpki);
   }
 
   delete mmu;

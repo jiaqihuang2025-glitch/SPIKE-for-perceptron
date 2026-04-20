@@ -156,7 +156,15 @@ Example result from the course environment:
 ```text
 mcycle = 24094
 minstret = 24099
-Perceptron stats hart=0: branches=30408 mispredictions=1401 miss_rate=4.607%
+Perceptron stats hart=0: branches=30408 mispredictions=1401 miss_rate=4.607% instructions=24099 mpki=58.135
+```
+
+Example nested-loop result:
+
+```text
+bbl loader
+done: 990000
+Perceptron stats hart=0: branches=98971 mispredictions=4674 miss_rate=4.723% instructions=528136 mpki=8.850
 ```
 
 `boom-tage/` contains a snapshot of the BOOM-side branch-predictor experiment files:
@@ -174,7 +182,7 @@ The printed percentage is branch miss rate:
 miss_rate = mispredictions / branches
 ```
 
-It is not MPKI. To compute MPKI, also count committed instructions:
+MPKI is computed from the same run:
 
 ```text
 MPKI = mispredictions * 1000 / committed_instructions
