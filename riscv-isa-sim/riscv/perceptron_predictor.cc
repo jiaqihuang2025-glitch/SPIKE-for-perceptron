@@ -14,16 +14,6 @@ static uint64_t mix64(uint64_t x)
   return x;
 }
 
-static unsigned log2_pow2(size_t value)
-{
-  unsigned bits = 0;
-  while (value > 1) {
-    value >>= 1;
-    bits++;
-  }
-  return bits;
-}
-
 } // namespace
 
 perceptron_predictor_t::perceptron_predictor_t(size_t n_entries, size_t hist_len, unsigned w_bits)
@@ -38,28 +28,46 @@ perceptron_predictor_t::perceptron_predictor_t(size_t n_entries, size_t hist_len
 
 int perceptron_predictor_t::index(uint64_t pc) const
 {
-  const unsigned idx_bits = log2_pow2(bias.size());
-  uint64_t hash = (pc >> 2) ^ fold_history(hist_len, idx_bits);
-  hash ^= mix64(pc);
+  // Original PC-only indexing:
+  // return static_cast<int>((pc >> 2) & (bias.size() - 1));
+
+  // Previous PC+history hashed indexing experiment:
+  // const unsigned idx_bits = log2_pow2(bias.size());
+  // uint64_t hash = (pc >> 2) ^ fold_history(hist_len, idx_bits);
+  // hash ^= mix64(pc);
+  // return static_cast<int>(hash & (bias.size() - 1));
+
+  uint64_t hash = mix64(pc >> 2);
   return static_cast<int>(hash & (bias.size() - 1));
 }
 
-uint64_t perceptron_predictor_t::fold_history(size_t hist_len, unsigned width) const
-{
-  if (width == 0 || hist_len == 0)
-    return 0;
-
-  uint64_t folded = 0;
-  for (size_t i = 0; i < hist_len && i < history.size(); ++i) {
-    if (history[i])
-      folded ^= (uint64_t(1) << (i % width));
-  }
-
-  if (width == 64)
-    return folded;
-
-  return folded & ((uint64_t(1) << width) - 1);
-}
+// Previous PC+history hashed indexing helper:
+// static unsigned log2_pow2(size_t value)
+// {
+//   unsigned bits = 0;
+//   while (value > 1) {
+//     value >>= 1;
+//     bits++;
+//   }
+//   return bits;
+// }
+//
+// uint64_t perceptron_predictor_t::fold_history(size_t hist_len, unsigned width) const
+// {
+//   if (width == 0 || hist_len == 0)
+//     return 0;
+//
+//   uint64_t folded = 0;
+//   for (size_t i = 0; i < hist_len && i < history.size(); ++i) {
+//     if (history[i])
+//       folded ^= (uint64_t(1) << (i % width));
+//   }
+//
+//   if (width == 64)
+//     return folded;
+//
+//   return folded & ((uint64_t(1) << width) - 1);
+// }
 
 int perceptron_predictor_t::sat_inc(int x) const
 {

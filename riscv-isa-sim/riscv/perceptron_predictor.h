@@ -17,7 +17,8 @@ public:
 
 private:
   int index(uint64_t pc) const;
-  uint64_t fold_history(size_t hist_len, unsigned width) const;
+  // Previous experiment helper for PC+history hashed indexing.
+  // uint64_t fold_history(size_t hist_len, unsigned width) const;
   int sat_inc(int x) const;
   int sat_dec(int x) const;
 
