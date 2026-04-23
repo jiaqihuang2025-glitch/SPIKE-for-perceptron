@@ -15,6 +15,8 @@ public:
   bool predict(uint64_t pc) const;
   void train(uint64_t pc, bool actual_taken);
   void reset();
+  bool last_prediction_high_confidence() const;
+  int last_abs_score() const;
 
 private:
   int index(uint64_t pc) const;
@@ -29,6 +31,7 @@ private:
   std::vector<int> bias;
   std::vector<std::vector<int>> weights;
   std::vector<bool> history;
+  mutable int last_score;
 };
 
 #endif

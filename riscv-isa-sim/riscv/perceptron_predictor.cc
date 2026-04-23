@@ -33,7 +33,8 @@ perceptron_predictor_t::perceptron_predictor_t(size_t n_entries, size_t hist_len
     min_weight(-(1 << (w_bits - 1))),
     bias(n_entries, 0),
     weights(n_entries, std::vector<int>(hist_len, 0)),
-    history(hist_len, false)
+    history(hist_len, false),
+    last_score(0)
 {
 }
 
@@ -83,6 +84,7 @@ bool perceptron_predictor_t::predict(uint64_t pc) const
   for (size_t i = 0; i < hist_len; ++i)
     score += history[i] ? weights[idx][i] : -weights[idx][i];
 
+  last_score = score;
   return score >= 0;
 }
 
@@ -115,4 +117,15 @@ void perceptron_predictor_t::reset()
   for (auto& row : weights)
     std::fill(row.begin(), row.end(), 0);
   std::fill(history.begin(), history.end(), false);
+  last_score = 0;
+}
+
+bool perceptron_predictor_t::last_prediction_high_confidence() const
+{
+  return std::abs(last_score) > theta;
+}
+
+int perceptron_predictor_t::last_abs_score() const
+{
+  return std::abs(last_score);
 }

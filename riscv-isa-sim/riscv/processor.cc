@@ -700,10 +700,13 @@ void processor_t::note_conditional_branch(reg_t pc, bool actual_taken)
       break;
     case branch_predictor_kind_t::hybrid: {
       const bool tage_pred = tage_predictor.predict(pc);
+      const bool perceptron_pred = perceptron_predictor.predict(pc);
       if (tage_predictor.last_prediction_high_confidence()) {
         predicted_taken = tage_pred;
+      } else if (perceptron_predictor.last_prediction_high_confidence()) {
+        predicted_taken = perceptron_pred;
       } else {
-        predicted_taken = perceptron_predictor.predict(pc);
+        predicted_taken = tage_pred;
       }
       break;
     }
