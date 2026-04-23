@@ -96,7 +96,8 @@ void perceptron_predictor_t::train(uint64_t pc, bool actual_taken)
     score += history[i] ? weights[idx][i] : -weights[idx][i];
 
   const bool predicted_taken = score >= 0;
-  const bool should_train = (predicted_taken != actual_taken) || (std::abs(score) <= theta);
+  const bool mispredicted = predicted_taken != actual_taken;
+  const bool should_train = mispredicted || (std::abs(score) <= theta);
 
   if (should_train) {
     bias[idx] = actual_taken ? sat_inc(bias[idx]) : sat_dec(bias[idx]);
